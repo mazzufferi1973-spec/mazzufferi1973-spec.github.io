@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestione Turni P.Mammolo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --primary-light: #3498db;
+            --secondary: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --text: #333;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            --transition: all 0.2s ease;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--text);
+            line-height: 1.6;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+        h1, h2, h3 { color: var(--primary); font-weight: 700; }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        .form-group { margin-bottom: 15px; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--primary);
+        }
+        select, input[type="text"], input[type="time"], input[type="date"], textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: #f9f9f9;
+        }
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            background-color: white;
+        }
+        textarea { resize: vertical; min-height: 100px; }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin: 10px 0;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        button:hover { background-color: var(--primary-light); transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        button i { font-size: 18px; }
+        .time-inputs { display: flex; gap: 15px; }
+        .time-inputs .form-group { flex: 1; }
+        #percorsi-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: var(--light);
+            border-left: 5px solid var(--primary);
+            display: none;
+        }
+        #percorsi-box ul { margin: 0; padding-left: 20px; }
+        #percorsi-box li {
+            margin-bottom: 8px;
+            font-size: 16px;
+            list-style-type: none;
+            position: relative;
+            padding-left: 20px;
+        }
+        #percorsi-box li:before {
+            content: "•";
+            color: var(--primary);
+            font-size: 20px;
+            position: absolute;
+            left: 0;
+        }
+        #cronologia {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: white;
+            box-shadow: var(--box-shadow);
+            display: none;
+        }
+        #cronologia h3 { display: flex; align-items: center; gap: 10px; }
+        .cronologia-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: white;
+            box-shadow: var(--box-shadow);
+            border-left: 5px solid var(--primary);
+        }
+        .straordinario { border-left-color: var(--secondary); }
+        .parziale { border-left-color: var(--warning); }
+        .riposo { border-left-color: var(--success); }
+        .congedo { border-left-color: #8e44ad; }
+        .malattia { border-left-color: #e67e22; }
+        .turno-item {
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            position: relative;
+            border-left: 4px solid var(--primary);
+        }
+        .turno-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        .turno-delete {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .button-group button {
+            flex: 1 1 120px;
+            min-width: 120px;
+            height: 50px;
+            font-size: 14px;
+        }
+        .button-group button:nth-child(1) { background-color: var(--secondary); }
+        .button-group button:nth-child(2) { background-color: var(--warning); }
+        .button-group button:nth-child(3) { background-color: var(--success); }
+        .button-group button:nth-child(4) { background-color: #9b59b6; }
+        .button-group button:nth-child(5) { background-color: #1abc9c; }
+        .button-group button:nth-child(6) { background-color: var(--success); }
+        .button-group button:nth-child(7) { background-color: #8e44ad; }
+        .button-group button:nth-child(8) { background-color: #e67e22; }
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            z-index: 1000;
+            width: 95%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .popup h3 {
+            margin-top: 0;
+            font-size: 22px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        .popup .form-group { margin-bottom: 15px; }
+        .popup label {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .popup input, .popup select, .popup textarea {
+            font-size: 16px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: var(--border-radius);
+            width: 100%;
+        }
+        .popup button {
+            margin: 15px 5px 0;
+            width: 48%;
+            min-width: 120px;
+            height: 45px;
+            font-size: 16px;
+        }
+        .popup button:first-of-type { background-color: var(--success); }
+        .popup button:last-of-type { background-color: #95a5a6; }
+        .sveglia-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #f39c12;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .sveglia-popup i.fa-times {
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            .time-inputs { flex-direction: column; gap: 10px; }
+            .button-group button { height: 45px; font-size: 14px; }
+        }
+        .toggle-cronologia {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .toggle-cronologia button {
+            width: auto;
+            padding: 10px 20px;
+            margin: 0 5px;
+        }
+        .malattia-text { color: #e67e22; font-weight: 700; }
+        /* Calendario Riposi */
+        .calendario-riposi {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin: 15px 0;
+        }
+        .giorno-calendario {
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            transition: var(--transition);
+        }
+        .giorno-calendario:hover {
+            background-color: #e0e0e0;
+        }
+        .domenica {
+            background-color: #d4edda;
+            color: var(--success);
+            font-weight: 600;
+        }
+        .sabato-scalare {
+            background-color: #fff3cd;
+            color: var(--warning);
+            font-weight: 600;
+        }
+        .riposo-selezionato {
+            background-color: var(--success) !important;
+            color: white !important;
+        }
+        .intestazione-calendario {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .lista-riposi-futuri {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        .riposo-futuro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            border-left: 4px solid var(--success);
+        }
+        .riposo-futuro .eliminare {
+            color: var(--secondary);
+            cursor: pointer;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1><i class="fas fa-bus-alt"></i> Gestione Turni P.Mammolo</h1>
+
+    <div class="card">
+        <div class="form-group">
+            <label for="turno">Turno</label>
+            <select id="turno" onchange="compilaOrari()">
+                <option value="">-- Seleziona un turno --</option>
+            </select>
+        </div>
+
+        <div id="percorsi-box">
+            <strong><i class="fas fa-route"></i> Percorsi:</strong>
+            <ul id="percorsi-lista"></ul>
+        </div>
+
+        <div class="form-group">
+            <label for="data">Data</label>
+            <input type="date" id="data">
+        </div>
+
+        <div class="time-inputs">
+            <div class="form-group">
+                <label for="inizio">Inizio</label>
+                <input type="time" id="inizio" readonly>
+            </div>
+            <div class="form-group">
+                <label for="fine">Fine</label>
+                <input type="time" id="fine" readonly>
+            </div>
+        </div>
+
+        <button onclick="salvaTurnoEseguito()"><i class="fas fa-save"></i> Salva Turno</button>
+    </div>
+
+    <div class="toggle-cronologia">
+        <button onclick="toggleCronologia()"><i class="fas fa-history"></i> Mostra Cronologia</button>
+    </div>
+
+    <div id="cronologia">
+        <h3><i class="fas fa-history"></i> CRONOLOGIA</h3>
+        <div id="lista-cronologia"></div>
+        <button onclick="esportaInPDF()"><i class="fas fa-file-pdf"></i> Esporta PDF</button>
+        <div class="toggle-cronologia">
+            <button onclick="toggleCronologia()"><i class="fas fa-times"></i> Nascondi Cronologia</button>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button onclick="apriPopup('aggiungi-straordinario')"><i class="fas fa-exclamation-triangle"></i> Straordinario</button>
+        <button onclick="apriPopup('aggiungi-parziale')"><i class="fas fa-clock"></i> Parziale</button>
+        <button onclick="apriPopup('nuovo-turno')"><i class="fas fa-plus-circle"></i> Nuovo Turno</button>
+        <button onclick="apriPopup('modifica-turno-seleziona')"><i class="fas fa-edit"></i> Modifica Turno</button>
+        <button onclick="apriPopup('gestione-riposi')"><i class="fas fa-calendar-check"></i> Gestione Riposi</button>
+        <button onclick="apriPopup('aggiungi-riposo')"><i class="fas fa-bed"></i> Riposo</button>
+        <button onclick="apriPopup('aggiungi-congedo')"><i class="fas fa-umbrella-beach"></i> Congedo</button>
+        <button onclick="apriPopup('aggiungi-malattia')"><i class="fas fa-notes-medical"></i> Malattia</button>
+    </div>
+
+    <!-- Popup Overlay -->
+    <div class="popup-overlay" id="popupOverlay"></div>
+
+    <!-- Popup Straordinario -->
+    <div id="aggiungi-straordinario" class="popup">
+        <h3><i class="fas fa-exclamation-triangle"></i> Straordinario</h3>
+        <div class="form-group">
+            <label for="data-straordinario">Data</label>
+            <input type="date" id="data-straordinario">
+        </div>
+        <div class="form-group">
+            <label for="turno-straordinario">Turno</label>
+            <select id="turno-straordinario">
+                <option value="">-- Seleziona un turno --</option>
+            </select>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button onclick="aggiungiStraordinario()">Salva</button>
+            <button onclick="chiudiPopup('aggiungi-straordinario')">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Popup Parziale -->
+    <div id="aggiungi-parziale" class="popup">
+        <h3><i class="fas fa-clock"></i> Turno Parziale</h3>
+        <div class="form-group">
+            <label for="data-parziale">Data</label>
+            <input type="date" id="data-parziale">
+        </div>
+        <div class="form-group">
+            <label for="turno-parziale">Turno</label>
+            <select id="turno-parziale">
+                <option value="">-- Seleziona un turno --</option>
+            </select>
+        </div>
+        <div class="time-inputs">
+            <div class="form-group">
+                <label for="inizio-parziale">Inizio</label>
+                <input type="time" id="inizio-parziale">
+            </div>
+            <div class="form-group">
+                <label for="fine-parziale">Fine</label>
+                <input type="time" id="fine-parziale">
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button onclick="aggiungiParziale()">Salva</button>
+            <button onclick="chiudiPopup('aggiungi-parziale')">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Popup Avviso -->
+    <div id="popup-avviso" class="popup" style="background-color: var(--secondary); color: white;">
+        <h3><i class="fas fa-exclamation-triangle"></i> ATTENZIONE</h3>
+        <p style="font-size: 16px; margin: 15px 0; text-align: center;">Non puoi effettuare questo turno: non rispettano le 9 ore minime di riposo tra un turno e l'altro.</p>
+        <button onclick="chiudiPopup('popup-avviso')" style="background-color: white; color: var(--secondary); width: 100%;">OK</button>
+    </div>
+
+    <!-- Popup Gestione Riposi -->
+    <div id="gestione-riposi" class="popup">
+        <h3><i class="fas fa-calendar-alt"></i> Gestione Riposi</h3>
+        <div class="form-group">
+            <label for="mese-riposi">Mese</label>
+            <select id="mese-riposi" onchange="generaCalendarioRiposi()">
+                <option value="0">Gennaio</option>
+                <option value="1">Febbraio</option>
+                <option value="2">Marzo</option>
+                <option value="3">Aprile</option>
+                <option value="4">Maggio</option>
+                <option value="5">Giugno</option>
+                <option value="6">Luglio</option>
+                <option value="7">Agosto</option>
+                <option value="8">Settembre</option>
+                <option value="9">Ottobre</option>
+                <option value="10">Novembre</option>
+                <option value="11">Dicembre</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="anno-riposi">Anno</label>
+            <select id="anno-riposi" onchange="generaCalendarioRiposi()">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+            </select>
+        </div>
+        <div class="intestazione-calendario">
+            <div>Lun</div>
+            <div>Mar</div>
+            <div>Mer</div>
+            <div>Gio</div>
+            <div>Ven</div>
+            <div>Sab</div>
+            <div>Dom</div>
+        </div>
+        <div class="calendario-riposi" id="calendario-riposi"></div>
+        <div class="lista-riposi-futuri">
+            <h4><i class="fas fa-list"></i> Riposi Futuri</h4>
+            <div id="lista-riposi-futuri"></div>
+        </div>
+        <button onclick="chiudiPopup('gestione-riposi')" style="background-color: #95a5a6; width: 100%;">Chiudi</button>
+    </div>
+
+    <!-- Popup Aggiungi Riposo -->
+    <div id="aggiungi-riposo" class="popup">
+        <h3><i class="fas fa-bed"></i> Aggiungi Riposo</h3>
+        <div class="form-group">
+            <label for="data-riposo">Data</label>
+            <input type="date" id="data-riposo">
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button onclick="aggiungiRiposo()">Salva</button>
+            <button onclick="chiudiPopup('aggiungi-riposo')">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Popup Aggiungi Congedo -->
+    <div id="aggiungi-congedo" class="popup">
+        <h3><i class="fas fa-umbrella-beach"></i> Aggiungi Congedo</h3>
+        <div class="form-group">
+            <label for="data-congedo">Data</label>
+            <input type="date" id="data-congedo">
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button onclick="aggiungiCongedo()">Salva</button>
+            <button onclick="chiudiPopup('aggiungi-congedo')">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Popup Aggiungi Malattia -->
+    <div id="aggiungi-malattia" class="popup">
+        <h3><i class="fas fa-notes-medical"></i> Aggiungi Malattia</h3>
+        <div class="form-group">
+            <label for="data-malattia">Data</label>
+            <input type="date" id="data-malattia">
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button onclick="aggiungiMalattia()">Salva</button>
+            <button onclick="chiudiPopup('aggiungi-malattia')">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Popup Nuovo Turno -->
+    <div id="nuovo-turno" class="popup">
+        <h3><i class="fas fa-plus-circle"></i> Nuovo Turno</h3>
+        <div class="form-group">
+            <label for="nuovo-turno-id">Numero Turno</label>
+            <input type="text" id="nuovo-turno-id" placeholder="Es. 57">
+        </div>
+        <div class="time-inputs">
+            <div class="form-group">
+                <label for="nuovo-inizio">Inizio</label>
+                <input type="time" id="nuovo-inizio">
+            </div>
+            <div class="form-group">
+                <label for="nuovo-fine">Fine</label>
+                <input type="time" id="nuovo-fine">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nuovo-percorsi">Percorsi (separati da virgola)</label>
+            <textarea id="nuovo-percorsi" placeholder="Es. 14:00 RM - TV, 15:30 TV - RM"></textarea>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button onclick="salvaNuovoTurno()">Salva</button>
+            <button onclick="chiudiPopup('nuovo-turno')">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Popup Selezione Turno da Modificare -->
+    <div id="modifica-turno-seleziona" class="popup">
+        <h3><i class="fas fa-edit"></i> Modifica Turno</h3>
+        <div class="form-group">
+            <label for="seleziona-turno-modifica">Seleziona Turno</label>
+            <select id="seleziona-turno-modifica" onchange="compilaDatiTurnoModifica()">
+                <option value="">-- Seleziona un turno --</option>
+            </select>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button onclick="apriPopupModificaTurno()">Modifica</button>
+            <button onclick="chiudiPopup('modifica-turno-seleziona')">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Popup Modifica Turno -->
+    <div id="modifica-turno" class="popup">
+        <h3><i class="fas fa-edit"></i> Modifica Turno</h3>
+        <div class="form-group">
+            <label for="modifica-turno-id">Numero Turno</label>
+            <input type="text" id="modifica-turno-id" readonly>
+        </div>
+        <div class="time-inputs">
+            <div class="form-group">
+                <label for="modifica-inizio">Inizio</label>
+                <input type="time" id="modifica-inizio">
+            </div>
+            <div class="form-group">
+                <label for="modifica-fine">Fine</label>
+                <input type="time" id="modifica-fine">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="modifica-percorsi">Percorsi (separati da virgola)</label>
+            <textarea id="modifica-percorsi"></textarea>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button onclick="salvaModificaTurno()">Salva</button>
+            <button onclick="chiudiPopup('modifica-turno')">Annulla</button>
+        </div>
+    </div>
+
+    <script>
+        // Funzione per formattare la data come gg/mm/aaaa
+        function formattaData(dataString) {
+            const date = new Date(dataString);
+            const giorno = String(date.getDate()).padStart(2, '0');
+            const mese = String(date.getMonth() + 1).padStart(2, '0');
+            const anno = date.getFullYear();
+            return `${giorno}/${mese}/${anno}`;
+        }
+
+        // Funzione per calcolare la differenza in ore tra due orari
+        function differenzaOre(finePrimoTurno, inizioSecondoTurno) {
+            const [fineH, fineM] = finePrimoTurno.split(':').map(Number);
+            const [inizioH, inizioM] = inizioSecondoTurno.split(':').map(Number);
+            const fineTotale = fineH * 60 + fineM;
+            const inizioTotale = inizioH * 60 + inizioM;
+            return (inizioTotale < fineTotale)
+                ? (1440 - fineTotale + inizioTotale) / 60
+                : (inizioTotale - fineTotale) / 60;
+        }
+
+        // Funzione per aprire/chiudere i popup
+        function apriPopup(id) {
+            document.getElementById("popupOverlay").style.display = "block";
+            document.getElementById(id).style.display = "block";
+            if (id === 'gestione-riposi') {
+                generaCalendarioRiposi();
+                aggiornaListaRiposiFuturi();
+            }
+        }
+
+        function chiudiPopup(id) {
+            document.getElementById("popupOverlay").style.display = "none";
+            document.getElementById(id).style.display = "none";
+        }
+
+        // Funzione per mostrare/nascondere la cronologia
+        function toggleCronologia() {
+            const cronologia = document.getElementById("cronologia");
+            const button = document.querySelector(".toggle-cronologia button");
+
+            if (cronologia.style.display === "none" || cronologia.style.display === "") {
+                cronologia.style.display = "block";
+                button.innerHTML = '<i class="fas fa-times"></i> Nascondi Cronologia';
+            } else {
+                cronologia.style.display = "none";
+                button.innerHTML = '<i class="fas fa-history"></i> Mostra Cronologia';
+            }
+        }
+
+        // Funzione per generare i giorni di riposo automatici
+        function generaRiposiAutomatici(anno, mese) {
+            const riposi = [];
+            const inizioCiclo = new Date(anno, mese, 15);
+            inizioCiclo.setHours(0, 0, 0, 0);
+
+            let dataCorrente = new Date(inizioCiclo);
+
+            for (let ciclo = 0; ciclo < 4; ciclo++) {
+                for (let i = 0; i < 7; i++) {
+                    while (dataCorrente.getDay() !== 0) dataCorrente.setDate(dataCorrente.getDate() + 1);
+                    riposi.push({
+                        data: new Date(dataCorrente),
+                        giornoSettimana: "Domenica",
+                        tipo: i === 6 ? "Domenica + Sabato" : "Domenica"
+                    });
+                    dataCorrente.setDate(dataCorrente.getDate() + 7);
+                }
+
+                const ultimoRiposo = riposi[riposi.length - 1];
+                const sabato = new Date(ultimoRiposo.data);
+                sabato.setDate(sabato.getDate() - 1);
+                riposi.push({
+                    data: sabato,
+                    giornoSettimana: "Sabato",
+                    tipo: "Sabato (dopo 7 domeniche)"
+                });
+
+                const giorniScalare = ["Venerdì", "Giovedì", "Mercoledì", "Martedì"];
+                for (let i = 0; i < 4; i++) {
+                    const giornoIndex = (dataCorrente.getDay() - (2 + i)) % 7;
+                    const giorniDaAggiungere = (giornoIndex + 7 - dataCorrente.getDay()) % 7;
+                    dataCorrente.setDate(dataCorrente.getDate() + giorniDaAggiungere);
+                    riposi.push({
+                        data: new Date(dataCorrente),
+                        giornoSettimana: giorniScalare[i],
+                        tipo: `Scalare (${giorniScalare[i]})`
+                    });
+                    dataCorrente.setDate(dataCorrente.getDate() + 7);
+                }
+            }
+
+            return riposi;
+        }
+
+        // Funzione per generare il calendario dei riposi
+        function generaCalendarioRiposi() {
+            const mese = parseInt(document.getElementById("mese-riposi").value);
+            const anno = parseInt(document.getElementById("anno-riposi").value);
+            const calendario = document.getElementById("calendario-riposi");
+            calendario.innerHTML = "";
+
+            const oggi = new Date();
+            const primoGiorno = new Date(anno, mese, 1);
+            const ultimoGiorno = new Date(anno, mese + 1, 0);
+            const giorniMese = ultimoGiorno.getDate();
+            const primoGiornoSettimana = primoGiorno.getDay() === 0 ? 7 : primoGiorno.getDay();
+
+            // Aggiungi giorni vuoti per allineare il primo giorno
+            for (let i = 1; i < primoGiornoSettimana; i++) {
+                const giornoVuoto = document.createElement("div");
+                giornoVuoto.className = "giorno-calendario";
+                giornoVuoto.style.visibility = "hidden";
+                calendario.appendChild(giornoVuoto);
+            }
+
+            // Aggiungi i giorni del mese
+            for (let giorno = 1; giorno <= giorniMese; giorno++) {
+                const dataCorrente = new Date(anno, mese, giorno);
+                const giornoDiv = document.createElement("div");
+                giornoDiv.className = "giorno-calendario";
+                giornoDiv.textContent = giorno;
+                giornoDiv.dataset.data = dataCorrente.toISOString().split('T')[0];
+
+                // Evidenzia domeniche e sabati scalari
+                if (dataCorrente.getDay() === 0) {
+                    giornoDiv.classList.add("domenica");
+                }
+
+                // Carica i riposi salvati
+                const riposiSalvati = JSON.parse(localStorage.getItem('riposiSalvati')) || [];
+                const riposoEsistente = riposiSalvati.find(r => r.data === dataCorrente.toISOString().split('T')[0]);
+                if (riposoEsistente) {
+                    giornoDiv.classList.add("riposo-selezionato");
+                }
+
+                // Aggiungi evento click
+                giornoDiv.addEventListener('click', function() {
+                    toggleRiposo(this.dataset.data);
+                });
+
+                calendario.appendChild(giornoDiv);
+            }
+        }
+
+        // Funzione per aggiungere/rimuovere un riposo
+        function toggleRiposo(data) {
+            let riposiSalvati = JSON.parse(localStorage.getItem('riposiSalvati')) || [];
+            const index = riposiSalvati.findIndex(r => r.data === data);
+
+            if (index === -1) {
+                // Aggiungi riposo
+                riposiSalvati.push({ data: data });
+                localStorage.setItem('riposiSalvati', JSON.stringify(riposiSalvati));
+                aggiornaListaRiposiFuturi();
+                aggiornaCronologia();
+                // Evidenzia nel calendario
+                document.querySelectorAll(`.giorno-calendario[data-data="${data}"]`).forEach(el => {
+                    el.classList.add("riposo-selezionato");
+                });
+            } else {
+                // Rimuovi riposo
+                riposiSalvati.splice(index, 1);
+                localStorage.setItem('riposiSalvati', JSON.stringify(riposiSalvati));
+                aggiornaListaRiposiFuturi();
+                aggiornaCronologia();
+                // Rimuovi evidenziazione
+                document.querySelectorAll(`.giorno-calendario[data-data="${data}"]`).forEach(el => {
+                    el.classList.remove("riposo-selezionato");
+                });
+            }
+        }
+
+        // Funzione per aggiornare la lista dei riposi futuri
+        function aggiornaListaRiposiFuturi() {
+            const lista = document.getElementById("lista-riposi-futuri");
+            lista.innerHTML = "";
+            const riposiSalvati = JSON.parse(localStorage.getItem('riposiSalvati')) || [];
+            const oggi = new Date();
+            oggi.setHours(0, 0, 0, 0);
+
+            riposiSalvati
+                .filter(r => new Date(r.data) >= oggi)
+                .sort((a, b) => new Date(a.data) - new Date(b.data))
+                .forEach(riposo => {
+                    const item = document.createElement("div");
+                    item.className = "riposo-futuro";
+                    item.innerHTML = `
+                        <div>
+                            <strong>${formattaData(riposo.data)}</strong>
+                        </div>
+                        <div class="eliminare" onclick="toggleRiposo('${riposo.data}')">
+                            <i class="fas fa-trash"></i>
+                        </div>
+                    `;
+                    lista.appendChild(item);
+                });
+
+            if (lista.children.length === 0) {
+                lista.innerHTML = "<p style='text-align: center; color: #666;'>Nessun riposo futuro.</p>";
+            }
+        }
+
+        // Funzione per verificare il riposo minimo tra turni
+        function verificaRiposoMinimo(dataTurno, inizioTurno) {
+            const turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+            const oggi = new Date(dataTurno);
+            const ieri = new Date(oggi);
+            ieri.setDate(ieri.getDate() - 1);
+
+            const turniIeri = turniEseguiti.filter(t => t.data === ieri.toISOString().split('T')[0] && !t.riposo && !t.congedo && !t.malattia);
+            if (turniIeri.length > 0) {
+                const ultimoTurnoIeri = turniIeri[turniIeri.length - 1];
+                return differenzaOre(ultimoTurnoIeri.fine, inizioTurno) >= 9;
+            }
+            return true;
+        }
+
+        // Funzione per calcolare le ore di differenza tra inizio e fine
+        function calcolaOre(inizio, fine) {
+            const [inizioH, inizioM] = inizio.split(':').map(Number);
+            const [fineH, fineM] = fine.split(':').map(Number);
+            const inizioMinuti = inizioH * 60 + inizioM;
+            const fineMinuti = fineH * 60 + fineM;
+            const differenzaMinuti = fineMinuti - inizioMinuti;
+            const ore = Math.floor(differenzaMinuti / 60);
+            const minuti = differenzaMinuti % 60;
+            return `${ore}:${minuti < 10 ? '0' + minuti : minuti}`;
+        }
+
+        // Turni predefiniti (dal PDF 6/3/2026)
+        let turni = [];
+
+        // Carica i turni predefiniti
+        function caricaTurniPredefiniti() {
+            // LUN-VEN SCOLASTICO MATTINA (100)
+            const turni100Mattina = [
+                { T: "1", Inizio: "00:00", Fine: "07:10", Ore: "7:10", Percorsi: ["FS - RM TIB", "00:30 RM TIB - FIUMI", "01:45 FIUMI - RM TIB", "02:30 RM TIB - FIUMI", "03:45 FIUMI - RM TIB", "05:00 RM TIB - TV", "06:15 TV - A24 - RM"] },
+                { T: "3", Inizio: "00:30", Fine: "07:20", Ore: "6:50", Percorsi: ["FS - RM TIB", "01:00 RM TIB - FIUMI", "02:15 FIUMI - RM TIB", "03:00 RM TIB - FIUMI", "04:15 FIUMI - RM TIB", "05:00 RM TIB - FIUMI", "06:15 FIUMI - RM TIB"] },
+                { T: "5", Inizio: "01:00", Fine: "07:30", Ore: "6:30", Percorsi: ["FS - RM TIB", "01:30 RM TIB - FIUMI", "02:45 FIUMI - RM TIB", "03:30 RM TIB - FIUMI", "04:45 FIUMI - RM TIB", "05:30 RM TIB - TV", "06:45 TV - A24 - RM"] },
+                { T: "7", Inizio: "01:30", Fine: "07:35", Ore: "6:05", Percorsi: ["FS - RM TIB", "02:00 RM TIB - FIUMI", "03:15 FIUMI - RM TIB", "04:00 RM TIB - FIUMI", "05:15 FIUMI - RM TIB", "FS - M.SIMO", "06:45 M.SIMO - RM"] },
+                { T: "9", Inizio: "03:15", Fine: "09:05", Ore: "5:50", Percorsi: ["FS - V.ALBA", "04:40 V.ALBA - RM", "FS - M.SIMO", "05:50 M.SIMO - RM", "06:45 RM - MC", "07:50 MC - RM"] },
+                { T: "11", Inizio: "03:45", Fine: "09:45", Ore: "6:00", Percorsi: ["FS - RM TIB", "04:30 RM TIB - FIUMI", "05:45 FIUMI - RM TIB", "FS - RM", "07:00 RM - TV", "08:20 TV-SV-A24-RM"] },
+                { T: "13", Inizio: "03:50", Fine: "10:15", Ore: "6:25", Percorsi: ["FS - RM TIB", "04:20 RM TIB - TV", "FS - C.MADA", "06:00 C.MADA - RM", "07:20 RM - MC", "08:50 MC - RM"] },
+                { T: "15", Inizio: "04:25", Fine: "11:35", Ore: "7:10", Percorsi: ["FS - S.A.R.", "05:10 S.A.R. - MC - RM", "06:15 RM - S.A.R.", "07:30 S.A.R. - RM", "09:50 RM - TV", "10:45 TV - RM"] },
+                { T: "17", Inizio: "04:20", Fine: "09:40", Ore: "5:20", Percorsi: ["FS - RM TIB", "04:50 RM TIB - RIETI", "07:30 RIETI - RM TIB", "FS - RM"] },
+                { T: "19", Inizio: "05:45", Fine: "16:00", Ore: "10:15", Percorsi: ["06:05 RM - MC", "06:50 MC - TV", "07:45 TV - A24 - RM", "NASTRO", "13:30 RM - TV", "14:40 RM - PREN - TV"] },
+                { T: "21", Inizio: "04:25", Fine: "11:30", Ore: "7:05", Percorsi: ["FS - GUIDONIA", "05:10 GUIDONIA - RM", "06:00 RM - PALOM", "07:10 PALOM - TV", "08:30 TV - PALOM", "09:15 PALOM - TV", "10:40 TV - A24 - RM"] },
+                { T: "23", Inizio: "04:30", Fine: "11:25", Ore: "6:55", Percorsi: ["FS - V.ALBA", "05:10 V.ALBA - RM", "FS - TV", "06:30 TV - RM", "09:00 RM - TV", "10:15 TV - RM"] },
+                { T: "25", Inizio: "04:50", Fine: "13:55", Ore: "9:05", Percorsi: ["FS - RM TIB", "05:20 RM TIB - TV", "06:30 TV - A24 - RM", "NASTRO", "11:50 RM - TV", "12:50 TV - RM"] },
+                { T: "27", Inizio: "04:55", Fine: "12:00", Ore: "7:05", Percorsi: ["FS - TV", "06:15 TV - A24 - RM", "07:10 RM - S.A.R.", "08:45 S.A.R. - RM", "10:00 RM - MC", "11:00 MC - RM"] },
+                { T: "29", Inizio: "07:00", Fine: "18:25", Ore: "11:25", Percorsi: ["07:20 RM - TV", "08:30 TV - RM", "NASTRO", "15:20 RM - M.SIMO", "16:05 M.SIMO - RM", "17:00 RM - A24 - TV", "FS - RM"] },
+                { T: "31", Inizio: "05:20", Fine: "11:10", Ore: "5:50", Percorsi: ["FS - RM TIB", "05:50 RM TIB - RIETI", "09:00 RIETI - RM TIB", "FS - RM"] },
+                { T: "33", Inizio: "05:20", Fine: "11:40", Ore: "6:20", Percorsi: ["05:40 RM - S.A.R.", "06:45 S.A.R. - RM", "08:20 RM - TV", "10:15 TV-SV-A24-RM"] },
+                { T: "37", Inizio: "05:05", Fine: "12:05", Ore: "7:00", Percorsi: ["FS - S.A.R.", "05:55 S.A.R. - MC - RM", "07:25 RM - M.SIMONE", "08:10 M.SIMO - RM", "09:10 RM - TV", "11:00 TV - RM"] },
+                { T: "41", Inizio: "05:25", Fine: "14:40", Ore: "9:15", Percorsi: ["FS - TV", "06:30 TV - A24 - RM", "NASTRO", "10:30 RM - M.SIMO", "11:30 M.SIMO - RM", "12:20 RM - TV", "13:30 TV - RM"] },
+                { T: "43", Inizio: "05:55", Fine: "15:25", Ore: "9:30", Percorsi: ["06:15 RM-A24-SV-TV", "NASTRO", "11:40 TV - RM", "13:00 RM - TV", "14:20 TV - RM"] },
+                { T: "49", Inizio: "06:30", Fine: "13:35", Ore: "7:05", Percorsi: ["FS - CORCOLLE", "07:05 CORCOLLE - TV", "08:00 TV - RM", "11:20 RM - TV", "12:30 TV - RM"] }
+            ];
+
+            // LUN-VEN SCOLASTICO POMERIGGIO (100)
+            const turni100Pomeriggio = [
+                { T: "2", Inizio: "11:15", Fine: "18:20", Ore: "7:05", Percorsi: ["11:40 RM - TV", "13:00 TV - A24 - RM", "13:45 RM - A24 - TV", "14:40 TV - RM", "16:20 RM - TV", "FS - RM"] },
+                { T: "4", Inizio: "10:45", Fine: "15:25", Ore: "4:40", Percorsi: ["11:10 RM - TV", "12:20 TV - RM", "13:30 RM - S.A.R.", "14:20 S.A.R. - RM"] },
+                { T: "6", Inizio: "12:15", Fine: "19:20", Ore: "7:05", Percorsi: ["12:40 RM - TV", "13:50 TV - RM", "15:05 RM - A24 - TV", "17:15 TV - PALOM", "18:00 PALOM - RM"] },
+                { T: "10", Inizio: "12:50", Fine: "19:15", Ore: "6:25", Percorsi: ["13:10 RM - TV", "16:00 TV - RM", "17:00 RM - A24 - TV", "18:00 TV-SV-A24-RM"] },
+                { T: "12", Inizio: "12:55", Fine: "19:40", Ore: "6:45", Percorsi: ["FS - GUIDONIA", "13:40 GUIDONIA - RM", "14:30 RM - TV", "16:20 TV-SV-A24-RM", "17:35 RM - A24 - TV", "18:20 TV - RM"] },
+                { T: "14", Inizio: "13:00", Fine: "18:50", Ore: "5:50", Percorsi: ["13:20 RM - TV", "14:25 TV - C.MADAMA", "14:45 C.MA-TV-A24-RM", "16:10 RM - TV", "17:30 TV - RM"] },
+                { T: "20", Inizio: "13:10", Fine: "20:20", Ore: "7:10", Percorsi: ["13:30 RM - PALOM", "15:05 PALOM - RM", "17:50 RM - S.A.R.", "19:00 S.A.R. - MC - RM"] },
+                { T: "22", Inizio: "13:20", Fine: "20:30", Ore: "7:10", Percorsi: ["13:40 RM - TV", "14:50 TV - RM", "16:20 RM - M.SIMO", "17:05 M.SIMO - RM", "18:30 RM - A24 - TV", "19:10 TV - RM"] },
+                { T: "24", Inizio: "13:40", Fine: "21:35", Ore: "7:55", Percorsi: ["14:00 RM - TV", "15:30 TV - RM", "NASTRO", "18:30 RM - V.ALBA", "FS - RM", "19:40 RM - A24 - TV", "20:50 TV - RM"] },
+                { T: "26", Inizio: "13:50", Fine: "20:40", Ore: "6:50", Percorsi: ["14:10 RM - PREN. - TV", "16:15 TV - RM", "17:45 RM - TV", "19:20 TV - RM"] },
+                { T: "28", Inizio: "13:50", Fine: "21:00", Ore: "7:10", Percorsi: ["14:10 RM - S.A.R.", "15:00 S.A.R. - RM", "18:15 RM - TV", "19:50 TV - RM"] },
+                { T: "30", Inizio: "13:55", Fine: "20:50", Ore: "6:55", Percorsi: ["14:15 RM - A24 - TV", "15:40 TV - PREN. - RM", "17:30 RM - TV", "19:30 TV - RM"] },
+                { T: "32", Inizio: "13:55", Fine: "21:04", Ore: "7:09", Percorsi: ["14:15 RM - MC", "FS - RM", "16:40 RM - TV", "18:20 TV - A24 - RM", "19:10 RM - MC", "20:15 MC - RM"] },
+                { T: "34", Inizio: "14:00", Fine: "21:07", Ore: "7:07", Percorsi: ["14:20 RM - M.SIMO", "15:10 M.SIMO - RM", "16:00 RM - S.A.R.", "17:00 S.A.R. - RM", "19:05 RM - A24 - TV", "20:15 TV - RM"] },
+                { T: "36", Inizio: "14:00", Fine: "21:10", Ore: "7:10", Percorsi: ["14:20 RM - TV", "16:10 TV - A24 - RM", "17:00 RM - A24 - TV", "18:00 TV - RM", "19:25 RM - A24 - TV", "20:10 TV - RM"] },
+                { T: "38", Inizio: "14:10", Fine: "20:30", Ore: "6:20", Percorsi: ["14:30 RM - PALOM", "16:00 PALOM - TV", "16:50 TV - RM", "18:15 RM - A24 - TV", "19:45 TV - A24 - RM"] },
+                { T: "40", Inizio: "16:30", Fine: "23:30", Ore: "7:00", Percorsi: ["16:50 RM - TV", "FS - RM", "19:45 RM - S.A.R", "FS - RM", "22:00 RM - TV", "FS - RM"] },
+                { T: "42", Inizio: "16:10", Fine: "22:25", Ore: "6:15", Percorsi: ["16:30 RM - TV", "18:10 TV - RM", "19:15 RM - TV", "21:30 TV - RM"] },
+                { T: "44", Inizio: "13:50", Fine: "21:45", Ore: "7:55", Percorsi: ["14:10 RM - TV", "15:15 TV - RM", "17:15 RM - A24 - TV", "NASTRO", "20:30 TV - RM"] },
+                { T: "46", Inizio: "16:55", Fine: "22:40", Ore: "5:45", Percorsi: ["17:15 RM - A24 - TV", "18:40 TV - RM", "20:00 RM - TV", "21:45 TV - RM"] },
+                { T: "47", Inizio: "10:45", Fine: "20:15", Ore: "9:30", Percorsi: ["FS - TV", "11:30 TV-SV-A24-RM", "12:50 RM - TV", "14:00 TV - RM", "NASTRO", "18:35 RM - M.SIMO", "19:30 M.SIMO - RM"] },
+                { T: "48", Inizio: "12:40", Fine: "22:00", Ore: "9:20", Percorsi: ["13:00 RM - A24 -TV", "14:00 TV-SV-PREN- RM", "NASTRO", "18:30 RM - SAMBUCI", "19:45 SAMBUCI - TV", "21:10 TV - RM"] },
+                { T: "50", Inizio: "17:40", Fine: "00:45", Ore: "7:05", Percorsi: ["18:00 RM - TV", "FS - RM", "20:15 RM - TV", "22:00 TV - RM", "23:15 RM - TV", "FS - RM"] },
+                { T: "52", Inizio: "16:00", Fine: "22:10", Ore: "6:10", Percorsi: ["16:20 RM - V.ALBA", "FS - RM", "17:55 RM - A24 - TV", "19:00 TV - RM", "20:30 RM - MC - S.A.R.", "FS - RM"] },
+                { T: "54", Inizio: "18:10", Fine: "00:25", Ore: "6:15", Percorsi: ["18:30 RM - TV", "20:00 TV-SV-A24-RM", "21:20 RM - TV", "23:05 TV - RM TIB", "FS - RM"] },
+                { T: "56", Inizio: "18:40", Fine: "01:25", Ore: "6:45", Percorsi: ["19:00 RM - TV", "21:00 TV-SV-A24-RM", "22:30 RM - TV", "00:05 TV - RM TIB", "FS - RM"] }
+            ];
+
+            // SABATO MATTINA (200)
+            const turni200SabatoMattina = [
+                { T: "201", Inizio: "00:00", Fine: "07:00", Ore: "7:00", Percorsi: ["FS - RM TIB", "00:30 RM TIB - FIUMI", "01:45 FIUMI - RM TIB", "02:30 RM TIB - FIUMI", "03:45 FIUMI - RM TIB", "05:00 RM TIB - TV", "06:15 TV - RM"] },
+                { T: "203", Inizio: "00:30", Fine: "07:20", Ore: "6:50", Percorsi: ["FS - RM TIB", "01:00 RM TIB - FIUMI", "02:15 FIUMI - RM TIB", "03:00 RM TIB - FIUMI", "04:15 FIUMI - RM TIB", "05:00 RM TIB - FIUMI", "06:15 FIUMI - RM TIB"] },
+                { T: "205", Inizio: "01:00", Fine: "07:30", Ore: "6:30", Percorsi: ["FS - RM TIB", "01:30 RM TIB - FIUMI", "02:45 FIUMI - RM TIB", "03:30 RM TIB - FIUMI", "04:45 FIUMI - RM TIB", "05:30 RM TIB - TV", "06:45 TV - A24 - RM"] },
+                { T: "207", Inizio: "01:30", Fine: "08:25", Ore: "6:55", Percorsi: ["FS - RM TIB", "02:00 RM TIB - FIUMI", "03:15 FIUMI - RM TIB", "04:00 RM TIB - FIUMI", "05:15 FIUMI - RM TIB", "FS - TV", "07:15 TV - RM"] },
+                { T: "209", Inizio: "04:20", Fine: "09:35", Ore: "5:15", Percorsi: ["FS - RM TIB", "04:50 RM TIB - RIETI", "07:30 RIETI - RM TIB", "FS - RM"] },
+                { T: "211", Inizio: "04:00", Fine: "11:00", Ore: "7:00", Percorsi: ["FS - RM TIB", "04:30 RM TIB - FIUMI", "05:45 FIUMI - RM TIB", "FS - TV", "08:40 TV - MC - S.A.R.", "09:45 S.A.R. - MC - RM"] },
+                { T: "213", Inizio: "04:00", Fine: "11:10", Ore: "7:10", Percorsi: ["FS - V.ALBA", "04:40 V.ALBA - RM", "FS - RM TIB", "05:50 RM TIB - RIETI", "09:00 RIETI - RM TIB", "FS - RM"] },
+                { T: "215", Inizio: "04:20", Fine: "11:30", Ore: "7:10", Percorsi: ["FS - S.A.R.", "05:10 S.A.R. - MC - RM", "06:15 TV-SV-A24-RM", "07:30 TV - RM", "09:30 RM - TV", "10:30 TV - RM"] },
+                { T: "217", Inizio: "04:35", Fine: "11:45", Ore: "7:10", Percorsi: ["FS - MC", "05:25 MC - RM", "06:40 RM - TV", "07:45 TV - RM", "09:45 RM - TV", "10:45 TV - RM"] },
+                { T: "219", Inizio: "05:00", Fine: "12:05", Ore: "7:05", Percorsi: ["FS - S.A.R.", "05:50 S.A.R. - MC - RM", "07:15 RM - TV", "08:30 TV - RM", "10:30 RM - M.SIMO", "11:30 M.SIMO - RM"] },
+                { T: "221", Inizio: "05:10", Fine: "12:20", Ore: "7:10", Percorsi: ["05:30 RM - MC - S.A.R.", "07:05 S.A.R. - TV", "09:00 TV - RM", "10:20 RM - TV", "11:15 RM - TV"] },
+                { T: "223", Inizio: "05:15", Fine: "15:35", Ore: "10:20", Percorsi: ["FS M.SI 06:00 M.SIMO-RM", "FS M.SI 07:15 M.SIMO-RM", "08:00 RM - M.SIMONE", "08:45 M.SIMO - RM", "NASTRO", "13:30 RM - TV", "14:30 TV - RM"] },
+                { T: "225", Inizio: "05:40", Fine: "12:45", Ore: "7:05", Percorsi: ["06:00 RM - TV", "07:00 TV - A24 - RM", "08:00 RM - MC - S.A.R.", "10:35 S.A.R. - TV", "11:30 TV-SV-A24-RM"] },
+                { T: "227", Inizio: "05:40", Fine: "17:35", Ore: "11:55", Percorsi: ["FS - S.A.R.", "06:30 S.A.R. - MC - RM", "NASTRO", "13:15 RM - TV", "14:15 TV - RM", "15:30 RM - TV", "16:30 TV - RM"] },
+                { T: "229", Inizio: "06:05", Fine: "13:10", Ore: "7:05", Percorsi: ["06:30 RM -MC - S.A.R.", "08:15 S.A.R. -MC - RM", "10:00 RM -MC - S.A.R.", "11:50 S.A.R. -MC - RM"] },
+                { T: "231", Inizio: "06:45", Fine: "17:35", Ore: "10:50", Percorsi: ["FS - TV", "07:30 TV - A24 - RM", "NASTRO", "13:00 RM - TV", "14:00 TV - RM", "15:15 RM - TV", "16:20 TV - RM"] },
+                { T: "233", Inizio: "06:40", Fine: "15:35", Ore: "8:55", Percorsi: ["07:00 RM -MC - S.A.R.", "FS - TV", "NASTRO", "11:45 TV - RM", "13:00 RM - A24 - TV", "14:00 TV-SV-PREN- RM"] },
+                { T: "235", Inizio: "07:25", Fine: "15:45", Ore: "8:20", Percorsi: ["07:45 RM -MC - S.A.R.", "FS - TV", "09:40 TV - S.A.R.", "10:50 S.A.R. -MC - RM", "NASTRO", "14:10 RM - M.SIMO", "15:00 M.SIMO - RM"] }
+            ];
+
+            // LUN-VEN SCOLASTICO (200)
+            const turni200LunVen = [
+                { T: "200", Inizio: "11:10", Fine: "18:20", Ore: "7:10", Percorsi: ["11:30 RM -MC - S.A.R.", "12:50 S.A.R. -MC - RM", "15:30 RM -MC - S.A.R.", "17:00 S.A.R. -MC - RM"] },
+                { T: "202", Inizio: "12:05", Fine: "19:05", Ore: "7:00", Percorsi: ["12:30 RM -MC - S.A.R.", "14:00 S.A.R. -MC - RM", "16:00 RM - TV", "18:00 TV - RM"] },
+                { T: "204", Inizio: "12:05", Fine: "19:15", Ore: "7:10", Percorsi: ["12:30 RM - A24 - TV", "15:00 TV - RM", "16:30 RM -MC - S.A.R.", "18:00 S.A.R. -MC - RM"] },
+                { T: "206", Inizio: "12:25", Fine: "19:35", Ore: "7:10", Percorsi: ["12:45 RM - TV", "13:45 TV - RM", "15:00 RM - TV", "16:00 TV - RM", "17:50 RM - TV", "FS - RM"] },
+                { T: "208", Inizio: "13:10", Fine: "19:35", Ore: "6:25", Percorsi: ["13:30 RM -MC - S.A.R.", "15:00 S.A.R. -MC - RM", "17:10 RM - TV", "18:30 TV - RM"] },
+                { T: "210", Inizio: "13:40", Fine: "20:10", Ore: "6:30", Percorsi: ["14:00 RM - TV", "16:15 TV - RM", "17:30 RM -MC - S.A.R.", "19:00 S.A.R. -MC - RM"] },
+                { T: "212", Inizio: "13:50", Fine: "20:15", Ore: "6:25", Percorsi: ["14:10 RM - TV", "16:45 TV - RM", "18:00 RM - TV", "19:15 TV - RM"] },
+                { T: "214", Inizio: "13:55", Fine: "21:05", Ore: "7:10", Percorsi: ["14:15 RM - TV", "15:30 TV - RM", "FS - TV", "17:40 TV - RM", "18:50 RM - TV", "20:00 TV-SV-A24-RM"] },
+                { T: "216", Inizio: "14:10", Fine: "21:20", Ore: "7:10", Percorsi: ["14:30 RM -MC - S.A.R.", "FS - RM", "16:30 RM - TV", "17:50 TV - RM", "19:45 RM - TV", "FS - RM"] },
+                { T: "218", Inizio: "14:25", Fine: "21:35", Ore: "7:10", Percorsi: ["14:45 RM - TV", "15:45 TV - RM", "17:00 RM - TV", "18:20 TV - RM", "20:00 RM - TV", "FS - RM"] },
+                { T: "220", Inizio: "15:10", Fine: "22:15", Ore: "7:05", Percorsi: ["FS - S.A.R.", "16:00 S.A.R. - MC - RM", "17:30 RM - TV", "18:50 TV - RM", "20:30 RM -MC - S.A.R.", "FS - RM"] },
+                { T: "222", Inizio: "15:45", Fine: "22:55", Ore: "7:10", Percorsi: ["16:00 RM - M.SIMONE", "16:45 M.SIMO - RM", "20:40 RM-A24-SV-TV", "22:00 TV - RM"] },
+                { T: "224", Inizio: "16:25", Fine: "22:05", Ore: "5:40", Percorsi: ["16:45 RM - TV", "18:10 TV - RM", "19:30 RM - TV", "21:00 TV-SV-A24-RM"] },
+                { T: "226", Inizio: "17:20", Fine: "00:05", Ore: "6:45", Percorsi: ["17:40 RM - TV", "FS - RM", "19:30 RM-A24-SV-TV", "21:00 TV - RM", "22:30 RM - TV", "FS - RM"] },
+                { T: "228", Inizio: "18:10", Fine: "00:50", Ore: "6:40", Percorsi: ["18:30 RM - TV", "20:30 TV - RM", "21:30 RM -MC - S.A.R.", "FS - TV", "23:45 TV - RM TIB", "FS - RM"] },
+                { T: "230", Inizio: "18:10", Fine: "00:50", Ore: "6:40", Percorsi: ["18:30 RM -MC - S.A.R.", "20:00 S.A.R. - MC - RM", "21:20 RM - TV", "23:45 TV - RM TIB"] }
+            ];
+
+            // FESTIVI (500)
+            const turni500Festivi = [
+                { T: "501", Inizio: "00:00", Fine: "06:45", Ore: "6:45", Percorsi: ["FS - RM TIB", "00:30 RM TIB - FIUMI", "01:45 FIUMI - RM TIB", "02:30 RM TIB - FIUMI", "03:45 FIUMI - RM TIB", "04:30 RM TIB - FIUMI", "05:45 FIUMI - RM TIB"] },
+                { T: "503", Inizio: "00:30", Fine: "07:15", Ore: "6:45", Percorsi: ["FS - RM TIB", "01:00 RM TIB - FIUMI", "02:15 FIUMI - RM TIB", "03:00 RM TIB - FIUMI", "04:15 FIUMI - RM TIB", "05:00 RM TIB - FIUMI", "06:15 FIUMI - RM TIB"] },
+                { T: "505", Inizio: "01:00", Fine: "07:30", Ore: "6:30", Percorsi: ["FS - RM TIB", "01:30 RM TIB - FIUMI", "02:45 FIUMI - RM TIB", "03:30 RM TIB - FIUMI", "04:45 FIUMI - RM TIB", "05:30 RM TIB - TV", "06:40 TV - RM"] },
+                { T: "507", Inizio: "01:30", Fine: "06:15", Ore: "4:45", Percorsi: ["FS - RM TIB", "02:00 RM TIB - FIUMI", "03:15 FIUMI - RM TIB", "04:00 RM TIB - FIUMI", "05:15 FIUMI - RM TIB"] },
+                { T: "509", Inizio: "04:05", Fine: "08:35", Ore: "4:30", Percorsi: ["FS - TV", "05:00 TV - RM", "06:10 RM - TV", "07:40 TV - RM"] },
+                { T: "511", Inizio: "04:40", Fine: "11:20", Ore: "6:40", Percorsi: ["FS - RM TIB", "05:10 RM TIB - TV", "06:20 TV - RM", "08:45 RM-A24-SV-TV", "10:30 TV - RM"] },
+                { T: "513", Inizio: "05:10", Fine: "12:00", Ore: "6:50", Percorsi: ["FS - S.A.R.", "06:00 S.A.R-MC-RM", "FS - SAR", "08:00 SAR-MC-RM", "10:00 RM - TV", "11:00 TV - RM"] },
+                { T: "515", Inizio: "06:20", Fine: "12:25", Ore: "6:05", Percorsi: ["06:40 RM - TV", "08:00 TV - RM", "09:20 RM-MC-SAR", "FS - TV", "11:30 TV - RM"] },
+                { T: "517", Inizio: "07:50", Fine: "13:55", Ore: "6:05", Percorsi: ["08:10 RM - TV", "09:20 TV - RM", "11:20 RM-MC-S.A.R", "FS - TV", "13:00 TV - RM"] },
+                { T: "502", Inizio: "10:20", Fine: "17:25", Ore: "7:05", Percorsi: ["10:40 RM - TV", "11:45 TV - RM", "13:00 RM-TV", "14:00 TV - RM", "15:30 RM - TV", "16:30 TV - RM"] },
+                { T: "504", Inizio: "10:40", Fine: "15:30", Ore: "4:50", Percorsi: ["11:00 RM - TV", "12:15 TV - RM", "13:40 RM-TV", "14:40 TV - RM"] },
+                { T: "506", Inizio: "12:00", Fine: "18:20", Ore: "6:20", Percorsi: ["12:20 RM - TV", "13:20 TV - RM", "15:45 RM-A24-SV-TV", "17:30 TV - RM"] },
+                { T: "508", Inizio: "14:40", Fine: "21:05", Ore: "6:25", Percorsi: ["15:00 RM - TV", "16:00 TV - RM", "17:15 RM - TV", "19:45 TV-SV-A24-RM"] },
+                { T: "510", Inizio: "14:55", Fine: "21:00", Ore: "6:05", Percorsi: ["15:15 RM - TV", "17:00 TV - RM", "18:20 RM - TV", "20:00 TV - RM"] },
+                { T: "512", Inizio: "15:25", Fine: "20:00", Ore: "4:35", Percorsi: ["15:45 RM - TV", "16:45 TV - RM", "18:00 RM - TV", "19:00 TV - RM"] },
+                { T: "514", Inizio: "16:25", Fine: "23:15", Ore: "6:50", Percorsi: ["16:45 RM - TV", "17:45 TV - RM", "19:00 RM - TV", "20:30 TV - RM", "21:40 RM-MC-SAR", "FS - DEP"] },
+                { T: "516", Inizio: "18:00", Fine: "00:20", Ore: "6:20", Percorsi: ["18:20 RM-MC-SAR", "20:00 SAR-MC-RM", "21:30 RM-TV", "23:00 TV-RM TIB", "00:05 FS - DEP"] },
+                { T: "518", Inizio: "20:00", Fine: "01:45", Ore: "5:45", Percorsi: ["20:20 RM - TV", "21:30 TV - RM", "23:15 FS - RM TIB", "23:30 RM - FIUM", "00:45 FIUM - RM", "01:30 FS - DEP"] },
+                { T: "501B", Inizio: "08:30", Fine: "13:05", Ore: "4:35", Percorsi: ["08:45 RM - S.VITTORI", "11:45 S.VITTORI - RM"] },
+                { T: "503B", Inizio: "08:30", Fine: "13:05", Ore: "4:35", Percorsi: ["08:45 RM - S.VITTORI", "11:45 S.VITTORI - RM"] }
+            ];
+
+            // Unisci tutti i turni predefiniti
+            turni = [...turni100Mattina, ...turni100Pomeriggio, ...turni200SabatoMattina, ...turni200LunVen, ...turni500Festivi];
+
+            // Carica i turni custom salvati in localStorage
+            const turniSalvati = JSON.parse(localStorage.getItem('turniCustom'));
+            if (turniSalvati) {
+                turni = [...turni, ...turniSalvati];
+            }
+        }
+
+        // Carica i turni nel menu a tendina
+        function caricaTurni() {
+            const selectTurno = document.getElementById("turno");
+            const selectStraordinario = document.getElementById("turno-straordinario");
+            const selectParziale = document.getElementById("turno-parziale");
+            const selectModifica = document.getElementById("seleziona-turno-modifica");
+
+            selectTurno.innerHTML = '<option value="">-- Seleziona un turno --</option>';
+            selectStraordinario.innerHTML = '<option value="">-- Seleziona un turno --</option>';
+            selectParziale.innerHTML = '<option value="">-- Seleziona un turno --</option>';
+            selectModifica.innerHTML = '<option value="">-- Seleziona un turno --</option>';
+
+            turni.forEach(turno => {
+                const option = document.createElement("option");
+                option.value = turno.T;
+                option.textContent = `Turno ${turno.T} (${turno.Inizio}-${turno.Fine})`;
+                selectTurno.appendChild(option.cloneNode(true));
+                selectStraordinario.appendChild(option.cloneNode(true));
+                selectParziale.appendChild(option.cloneNode(true));
+                selectModifica.appendChild(option.cloneNode(true));
+            });
+        }
+
+        // Compila i campi orario inizio/fine e mostra i percorsi
+        function compilaOrari() {
+            const turnoId = document.getElementById("turno").value;
+            const inizioInput = document.getElementById("inizio");
+            const fineInput = document.getElementById("fine");
+            const percorsiBox = document.getElementById("percorsi-box");
+            const percorsiLista = document.getElementById("percorsi-lista");
+
+            if (!turnoId) {
+                inizioInput.value = "";
+                fineInput.value = "";
+                percorsiBox.style.display = "none";
+                return;
+            }
+
+            const turno = turni.find(t => t.T === turnoId);
+            if (turno) {
+                inizioInput.value = turno.Inizio;
+                fineInput.value = turno.Fine;
+
+                percorsiLista.innerHTML = "";
+                turno.Percorsi.forEach(percorso => {
+                    const li = document.createElement("li");
+                    li.textContent = percorso;
+                    percorsiLista.appendChild(li);
+                });
+                percorsiBox.style.display = "block";
+            }
+        }
+
+        // Compila i dati del turno selezionato per la modifica
+        function compilaDatiTurnoModifica() {
+            const turnoId = document.getElementById("seleziona-turno-modifica").value;
+            const turno = turni.find(t => t.T === turnoId);
+            if (turno) {
+                document.getElementById("modifica-turno-id").value = turno.T;
+                document.getElementById("modifica-inizio").value = turno.Inizio;
+                document.getElementById("modifica-fine").value = turno.Fine;
+                document.getElementById("modifica-percorsi").value = turno.Percorsi.join(', ');
+            }
+        }
+
+        // Apri il popup di modifica turno
+        function apriPopupModificaTurno() {
+            const turnoId = document.getElementById("seleziona-turno-modifica").value;
+            if (!turnoId) {
+                alert("Seleziona un turno da modificare.");
+                return;
+            }
+            chiudiPopup('modifica-turno-seleziona');
+            apriPopup('modifica-turno');
+        }
+
+        // Salva il turno eseguito
+        function salvaTurnoEseguito() {
+            const turnoId = document.getElementById("turno").value;
+            const dataInput = document.getElementById("data").value;
+            const inizioInput = document.getElementById("inizio").value;
+            const fineInput = document.getElementById("fine").value;
+
+            if (!turnoId || !dataInput || !inizioInput || !fineInput) {
+                alert("Seleziona un turno e una data valida.");
+                return;
+            }
+
+            const turno = turni.find(t => t.T === turnoId);
+
+            if (!verificaRiposoMinimo(dataInput, inizioInput)) {
+                apriPopup("popup-avviso");
+                return;
+            }
+
+            const turnoEseguito = {
+                turnoId: turno.T,
+                inizio: inizioInput,
+                fine: fineInput,
+                data: dataInput,
+                straordinario: false,
+                parziale: false,
+                riposo: false,
+                congedo: false,
+                malattia: false
+            };
+
+            let turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+            turniEseguiti.push(turnoEseguito);
+            localStorage.setItem('turniEseguiti', JSON.stringify(turniEseguiti));
+            aggiornaCronologia();
+
+            alert(`Turno ${turno.T} salvato per il ${formattaData(dataInput)}!`);
+        }
+
+        // Aggiungi un turno straordinario
+        function aggiungiStraordinario() {
+            const dataStraordinario = document.getElementById("data-straordinario").value;
+            const turnoStraordinarioId = document.getElementById("turno-straordinario").value;
+
+            if (!dataStraordinario || !turnoStraordinarioId) {
+                alert("Seleziona una data e un turno valido.");
+                return;
+            }
+
+            const turnoStraordinario = turni.find(t => t.T === turnoStraordinarioId);
+
+            if (!verificaRiposoMinimo(dataStraordinario, turnoStraordinario.Inizio)) {
+                apriPopup("popup-avviso");
+                return;
+            }
+
+            const straordinario = {
+                turnoId: turnoStraordinario.T,
+                inizio: turnoStraordinario.Inizio,
+                fine: turnoStraordinario.Fine,
+                data: dataStraordinario,
+                straordinario: true,
+                parziale: false,
+                riposo: false,
+                congedo: false,
+                malattia: false
+            };
+
+            let turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+
+            // Verifica se esiste già un turno per quella data
+            const turnoEsistente = turniEseguiti.find(t => t.data === dataStraordinario && !t.straordinario && !t.parziale && !t.riposo && !t.congedo && !t.malattia);
+
+            if (!turnoEsistente) {
+                alert("Non esiste un turno normale per questa data. Aggiungi prima un turno normale.");
+                return;
+            }
+
+            // Aggiungi il turno straordinario
+            turniEseguiti.push(straordinario);
+            localStorage.setItem('turniEseguiti', JSON.stringify(turniEseguiti));
+            aggiornaCronologia();
+
+            alert(`Turno straordinario ${turnoStraordinario.T} aggiunto per il ${formattaData(dataStraordinario)}!`);
+            chiudiPopup('aggiungi-straordinario');
+        }
+
+        // Aggiungi un turno parziale
+        function aggiungiParziale() {
+            const dataParziale = document.getElementById("data-parziale").value;
+            const turnoParzialeId = document.getElementById("turno-parziale").value;
+            const inizioParziale = document.getElementById("inizio-parziale").value;
+            const fineParziale = document.getElementById("fine-parziale").value;
+
+            if (!dataParziale || !turnoParzialeId || !inizioParziale || !fineParziale) {
+                alert("Inserisci una data, un turno di riferimento e gli orari di inizio e fine.");
+                return;
+            }
+
+            if (!verificaRiposoMinimo(dataParziale, inizioParziale)) {
+                apriPopup("popup-avviso");
+                return;
+            }
+
+            const turnoParziale = turni.find(t => t.T === turnoParzialeId);
+
+            const parziale = {
+                turnoId: turnoParziale.T,
+                inizio: inizioParziale,
+                fine: fineParziale,
+                data: dataParziale,
+                straordinario: false,
+                parziale: true,
+                riposo: false,
+                congedo: false,
+                malattia: false
+            };
+
+            let turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+
+            // Aggiungi il turno parziale
+            turniEseguiti.push(parziale);
+            localStorage.setItem('turniEseguiti', JSON.stringify(turniEseguiti));
+            aggiornaCronologia();
+
+            alert(`Turno parziale del ${turnoParziale.T} aggiunto per il ${formattaData(dataParziale)}!`);
+            chiudiPopup('aggiungi-parziale');
+        }
+
+        // Aggiungi un giorno di riposo
+        function aggiungiRiposo() {
+            const dataRiposo = document.getElementById("data-riposo").value;
+
+            if (!dataRiposo) {
+                alert("Seleziona una data valida.");
+                return;
+            }
+
+            const riposo = {
+                data: dataRiposo,
+                riposo: true,
+                congedo: false,
+                malattia: false,
+                straordinario: false,
+                parziale: false
+            };
+
+            let turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+            turniEseguiti.push(riposo);
+            localStorage.setItem('turniEseguiti', JSON.stringify(turniEseguiti));
+            aggiornaCronologia();
+
+            alert(`Giorno di riposo aggiunto per il ${formattaData(dataRiposo)}!`);
+            chiudiPopup('aggiungi-riposo');
+        }
+
+        // Aggiungi un giorno di congedo
+        function aggiungiCongedo() {
+            const dataCongedo = document.getElementById("data-congedo").value;
+
+            if (!dataCongedo) {
+                alert("Seleziona una data valida.");
+                return;
+            }
+
+            const congedo = {
+                data: dataCongedo,
+                riposo: false,
+                congedo: true,
+                malattia: false,
+                straordinario: false,
+                parziale: false
+            };
+
+            let turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+            turniEseguiti.push(congedo);
+            localStorage.setItem('turniEseguiti', JSON.stringify(turniEseguiti));
+            aggiornaCronologia();
+
+            alert(`Giorno di congedo aggiunto per il ${formattaData(dataCongedo)}!`);
+            chiudiPopup('aggiungi-congedo');
+        }
+
+        // Aggiungi un giorno di malattia
+        function aggiungiMalattia() {
+            const dataMalattia = document.getElementById("data-malattia").value;
+
+            if (!dataMalattia) {
+                alert("Seleziona una data valida.");
+                return;
+            }
+
+            const malattia = {
+                data: dataMalattia,
+                riposo: false,
+                congedo: false,
+                malattia: true,
+                straordinario: false,
+                parziale: false
+            };
+
+            let turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+            turniEseguiti.push(malattia);
+            localStorage.setItem('turniEseguiti', JSON.stringify(turniEseguiti));
+            aggiornaCronologia();
+
+            alert(`Giorno di malattia aggiunto per il ${formattaData(dataMalattia)}!`);
+            chiudiPopup('aggiungi-malattia');
+        }
+
+        // Salva un nuovo turno
+        function salvaNuovoTurno() {
+            const nuovoTurnoId = document.getElementById("nuovo-turno-id").value;
+            const nuovoInizio = document.getElementById("nuovo-inizio").value;
+            const nuovoFine = document.getElementById("nuovo-fine").value;
+            const nuoviPercorsi = document.getElementById("nuovo-percorsi").value;
+
+            if (!nuovoTurnoId || !nuovoInizio || !nuovoFine) {
+                alert("Inserisci numero turno, orario di inizio e fine.");
+                return;
+            }
+
+            // Verifica se il turno esiste già
+            if (turni.some(t => t.T === nuovoTurnoId)) {
+                alert(`Il turno ${nuovoTurnoId} esiste già.`);
+                return;
+            }
+
+            // Converte i percorsi
+            const percorsiArray = nuoviPercorsi.split(',').map(p => p.trim()).filter(p => p);
+
+            // Aggiungi il nuovo turno
+            const nuovoTurno = {
+                T: nuovoTurnoId,
+                Inizio: nuovoInizio,
+                Fine: nuovoFine,
+                Ore: calcolaOre(nuovoInizio, nuovoFine),
+                Percorsi: percorsiArray
+            };
+
+            turni.push(nuovoTurno);
+
+            // Salva i turni custom
+            const turniCustom = turni.filter(t => ![
+                "1", "3", "5", "7", "9", "11", "13", "15", "17", "19", "21", "23", "25", "27", "29", "31", "33", "37", "41", "43", "49",
+                "2", "4", "6", "10", "12", "14", "20", "22", "24", "26", "28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "47", "48", "50", "52", "54", "56",
+                "201", "203", "205", "207", "209", "211", "213", "215", "217", "219", "221", "223", "225", "227", "229", "231", "233", "235",
+                "200", "202", "204", "206", "208", "210", "212", "214", "216", "218", "220", "222", "224", "226", "228", "230",
+                "501", "503", "505", "507", "509", "511", "513", "515", "517", "502", "504", "506", "508", "510", "512", "514", "516", "518",
+                "501B", "503B"
+            ].includes(t.T));
+
+            localStorage.setItem('turniCustom', JSON.stringify(turniCustom));
+
+            // Ricarica i menu
+            caricaTurni();
+
+            // Chiudi il popup
+            chiudiPopup('nuovo-turno');
+
+            alert(`Turno ${nuovoTurnoId} creato!`);
+        }
+
+        // Salva le modifiche al turno
+        function salvaModificaTurno() {
+            const turnoId = document.getElementById("modifica-turno-id").value;
+            const nuovoInizio = document.getElementById("modifica-inizio").value;
+            const nuovoFine = document.getElementById("modifica-fine").value;
+            const nuoviPercorsi = document.getElementById("modifica-percorsi").value;
+
+            if (!nuovoInizio || !nuovoFine) {
+                alert("Inserisci orari di inizio e fine validi.");
+                return;
+            }
+
+            // Trova il turno
+            const index = turni.findIndex(t => t.T === turnoId);
+            if (index === -1) {
+                alert("Turno non trovato.");
+                return;
+            }
+
+            // Converte i percorsi
+            const percorsiArray = nuoviPercorsi.split(',').map(p => p.trim()).filter(p => p);
+
+            // Aggiorna il turno
+            turni[index] = {
+                T: turnoId,
+                Inizio: nuovoInizio,
+                Fine: nuovoFine,
+                Ore: calcolaOre(nuovoInizio, nuovoFine),
+                Percorsi: percorsiArray
+            };
+
+            // Salva i turni custom
+            const turniCustom = turni.filter(t => ![
+                "1", "3", "5", "7", "9", "11", "13", "15", "17", "19", "21", "23", "25", "27", "29", "31", "33", "37", "41", "43", "49",
+                "2", "4", "6", "10", "12", "14", "20", "22", "24", "26", "28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "47", "48", "50", "52", "54", "56",
+                "201", "203", "205", "207", "209", "211", "213", "215", "217", "219", "221", "223", "225", "227", "229", "231", "233", "235",
+                "200", "202", "204", "206", "208", "210", "212", "214", "216", "218", "220", "222", "224", "226", "228", "230",
+                "501", "503", "505", "507", "509", "511", "513", "515", "517", "502", "504", "506", "508", "510", "512", "514", "516", "518",
+                "501B", "503B"
+            ].includes(t.T));
+
+            localStorage.setItem('turniCustom', JSON.stringify(turniCustom));
+
+            // Ricarica i menu
+            caricaTurni();
+
+            // Chiudi il popup
+            chiudiPopup('modifica-turno');
+
+            alert(`Turno ${turnoId} modificato!`);
+        }
+
+        // Aggiorna la cronologia
+        function aggiornaCronologia() {
+            const listaCronologia = document.getElementById("lista-cronologia");
+            let turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+            const riposiSalvati = JSON.parse(localStorage.getItem('riposiSalvati')) || [];
+
+            // Aggiungi i riposi salvati alla cronologia
+            riposiSalvati.forEach(riposo => {
+                if (!turniEseguiti.some(t => t.data === riposo.data && t.riposo)) {
+                    turniEseguiti.push({
+                        data: riposo.data,
+                        riposo: true,
+                        congedo: false,
+                        malattia: false,
+                        straordinario: false,
+                        parziale: false
+                    });
+                }
+            });
+
+            if (turniEseguiti.length > 0) {
+                listaCronologia.innerHTML = "";
+
+                const turniPerData = {};
+                turniEseguiti.forEach((turno, index) => {
+                    if (!turniPerData[turno.data]) turniPerData[turno.data] = [];
+                    turniPerData[turno.data].push({...turno, index});
+                });
+
+                const dateOrdinate = Object.keys(turniPerData).sort((a, b) => new Date(b) - new Date(a));
+
+                dateOrdinate.forEach(data => {
+                    const turniData = turniPerData[data];
+                    const div = document.createElement("div");
+                    div.className = "cronologia-item";
+
+                    const haStraordinario = turniData.some(t => t.straordinario);
+                    const haParziale = turniData.some(t => t.parziale);
+                    const haRiposo = turniData.some(t => t.riposo);
+                    const haCongedo = turniData.some(t => t.congedo);
+                    const haMalattia = turniData.some(t => t.malattia);
+
+                    if (haStraordinario) div.classList.add("straordinario");
+                    else if (haParziale) div.classList.add("parziale");
+                    else if (haRiposo) div.classList.add("riposo");
+                    else if (haCongedo) div.classList.add("congedo");
+                    else if (haMalattia) div.classList.add("malattia");
+
+                    let contenuto = `<div><strong>${formattaData(data)}</strong>`;
+                    turniData.forEach(turno => {
+                        if (turno.riposo) {
+                            contenuto += `
+                                <div class="turno-item riposo">
+                                    <div>
+                                        <strong class="riposo-text">RIPOSO</strong>
+                                    </div>
+                                    <div class="turno-actions">
+                                        <button class="turno-delete" onclick="eliminaTurnoEseguito(${turno.index})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (turno.congedo) {
+                            contenuto += `
+                                <div class="turno-item congedo">
+                                    <div>
+                                        <strong class="congedo-text">CONGEDO</strong>
+                                    </div>
+                                    <div class="turno-actions">
+                                        <button class="turno-delete" onclick="eliminaTurnoEseguito(${turno.index})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (turno.malattia) {
+                            contenuto += `
+                                <div class="turno-item malattia">
+                                    <div>
+                                        <strong class="malattia-text">MALATTIA</strong>
+                                    </div>
+                                    <div class="turno-actions">
+                                        <button class="turno-delete" onclick="eliminaTurnoEseguito(${turno.index})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            contenuto += `
+                                <div class="turno-item ${turno.straordinario ? 'straordinario' : turno.parziale ? 'parziale' : ''}">
+                                    <div>
+                                        <strong class="${turno.straordinario || turno.parziale ? (turno.straordinario ? 'straordinario-text' : 'parziale-text') : ''}">
+                                            ${turno.parziale ? `Parziale ${turno.turnoId}` : `Turno ${turno.turnoId}`} ${turno.straordinario ? '(Straordinario)' : ''}
+                                        </strong>
+                                        <div>${turno.inizio} - ${turno.fine}</div>
+                                    </div>
+                                    <div class="turno-actions">
+                                        <button class="turno-delete" onclick="eliminaTurnoEseguito(${turno.index})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                    contenuto += `</div>`;
+                    div.innerHTML = contenuto;
+                    listaCronologia.appendChild(div);
+                });
+            } else {
+                listaCronologia.innerHTML = "<p style='text-align: center;'>Nessun turno eseguito.</p>";
+            }
+        }
+
+        // Elimina un turno eseguito
+        function eliminaTurnoEseguito(index) {
+            let turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+            turniEseguiti.splice(index, 1);
+            localStorage.setItem('turniEseguiti', JSON.stringify(turniEseguiti));
+            aggiornaCronologia();
+        }
+
+        // Esporta in PDF
+        function esportaInPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const turniEseguiti = JSON.parse(localStorage.getItem('turniEseguiti')) || [];
+            const riposiSalvati = JSON.parse(localStorage.getItem('riposiSalvati')) || [];
+            let y = 20;
+
+            doc.setFontSize(16);
+            doc.text("Cronologia Turni Eseguiti", 105, y, { align: 'center' });
+            y += 10;
+
+            if (turniEseguiti.length === 0 && riposiSalvati.length === 0) {
+                doc.text("Nessun turno o riposo registrato.", 105, y, { align: 'center' });
+            } else {
+                // Aggiungi riposi salvati
+                riposiSalvati.forEach(riposo => {
+                    doc.text(`${formattaData(riposo.data)}: RIPOSO`, 10, y);
+                    y += 7;
+                });
+
+                // Aggiungi turni eseguiti
+                turniEseguiti.forEach(turno => {
+                    const dataFormattata = formattaData(turno.data);
+                    if (turno.riposo) {
+                        // Skip, già aggiunti sopra
+                    } else if (turno.congedo) {
+                        doc.text(`${dataFormattata}: CONGEDO`, 10, y);
+                        y += 7;
+                    } else if (turno.malattia) {
+                        doc.text(`${dataFormattata}: MALATTIA`, 10, y);
+                        y += 7;
+                    } else {
+                        const testoTurno = turno.parziale
+                            ? `Parziale ${turno.turnoId} (${turno.inizio}-${turno.fine})`
+                            : turno.straordinario
+                                ? `Turno ${turno.turnoId} (Straordinario) (${turno.inizio}-${turno.fine})`
+                                : `Turno ${turno.turnoId} (${turno.inizio}-${turno.fine})`;
+                        doc.text(`${dataFormattata}: ${testoTurno}`, 10, y);
+                        y += 7;
+                    }
+                });
+            }
+
+            doc.save("cronologia_turni.pdf");
+        }
+
+        // Inizializza l'applicazione
+        window.onload = function() {
+            caricaTurniPredefiniti();
+            caricaTurni();
+            aggiornaCronologia();
+
+            // Imposta la data odierna nei campi
+            const oggi = new Date();
+            document.getElementById("data").valueAsDate = oggi;
+            document.getElementById("data-riposo").valueAsDate = oggi;
+            document.getElementById("data-congedo").valueAsDate = oggi;
+            document.getElementById("data-malattia").valueAsDate = oggi;
+            document.getElementById("data-straordinario").valueAsDate = oggi;
+            document.getElementById("data-parziale").valueAsDate = oggi;
+
+            // Imposta mese/anno corrente nel calendario riposi
+            document.getElementById("mese-riposi").value = oggi.getMonth();
+            document.getElementById("anno-riposi").value = oggi.getFullYear();
+        };
+    </script>
+</body>
+</html>
